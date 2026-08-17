@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>学習用スマートブラウザ Pro</title>
+  <style>
+    /* カラーテーマ定義 */
+    :root {
+      --bg-color: #f4f6f9;
+      --header-bg: #2c3e50;
+      --sidebar-bg: #ffffff;
+      --accent-color: #3498db;
+      --text-color: #333333;
+      --border-color: #dddddd;
+      --tab-active-bg: #f4f6f9;
+      --tab-active-text: #333333;
+    }
+
+    /* テーマパターン */
+    body.theme-dark {
+      --bg-color: #1e1e1e;
+      --header-bg: #111111;
+      --sidebar-bg: #252526;
+      --accent-color: #0e639c;
+      --text-color: #cccccc;
+      --border-color: #3d3d3d;
+      --tab-active-bg: #1e1e1e;
+      --tab-active-text: #ffffff;
+    }
+
+    body.theme-blue {
+      --bg-color: #eef5fc;
+      --header-bg: #1a365d;
+      --sidebar-bg: #ffffff;
+      --accent-color: #2b6cb0;
+      --text-color: #2d3748;
+      --border-color: #cbd5e0;
+      --tab-active-bg: #eef5fc;
+      --tab-active-text: #1a365d;
+    }
+
+    body.theme-green {
+      --bg-color: #f0f7f4;
+      --header-bg: #1b4332;
+      --sidebar-bg: #ffffff;
+      --accent-color: #2d6a4f;
+      --text-color: #2d3748;
+      --border-color: #b7e4c7;
+      --tab-active-bg: #f0f7f4;
+      --tab-active-text: #1b4332;
+    }
+
+    body.theme-purple {
+      --bg-color: #f8f5fa;
+      --header-bg: #4a154b;
+      --sidebar-bg: #ffffff;
+      --accent-color: #6b116b;
+      --text-color: #333333;
+      --border-color: #e2d1f0;
+      --tab-active-bg: #f8f5fa;
+      --tab-active-text: #4a154b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-color); color: var(--text-color); height: 100vh; display: flex; flex-direction: column; overflow: hidden; transition: background 0.3s, color 0.3s; }
+
+    /* ヘッダー＆コントロールバー */
+    header { background: var(--header-bg); color: white; padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .brand { font-weight: bold; font-size: 1.1rem; }
+    
+    .nav-bar { display: flex; gap: 8px; flex: 1; max-width: 800px; align-items: center; }
+    .nav-bar input[type="text"] { flex: 1; padding: 8px 12px; border-radius: 4px; border: none; font-size: 0.9rem; }
+    .nav-bar button { padding: 8px 12px; background: var(--accent-color); color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap; font-size: 0.85rem; }
+
+    /* 学習モードトグル */
+    .study-mode-toggle { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; }
+    .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 20px; }
+    .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: #2ecc71; }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    .menu-btn { background: var(--accent-color); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+
+    /* タブバー */
+    .tabs-bar { background: rgba(0,0,0,0.2); display: flex; overflow-x: auto; padding: 5px 5px 0 5px; gap: 5px; }
+    .tab { background: rgba(255,255,255,0.2); color: #fff; padding: 8px 15px; border-radius: 5px 5px 0 0; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.85rem; max-width: 200px; }
+    .tab.active { background: var(--tab-active-bg); color: var(--tab-active-text); font-weight: bold; }
+    .tab .close-tab { border-radius: 50%; padding: 2px 5px; font-size: 0.7rem; }
+    .tab .close-tab:hover { background: rgba(0,0,0,0.2); }
+    .add-tab-btn { background: transparent; color: white; border: none; font-size: 1.2rem; cursor: pointer; padding: 0 10px; }
+
+    /* メインエリア */
+    .main-container { display: flex; flex: 1; height: calc(100vh - 90px); }
+
+    /* サイドバー */
+    .sidebar { width: 280px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); padding: 15px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+    .sidebar h3 { font-size: 1rem; border-bottom: 2px solid var(--accent-color); padding-bottom: 5px; margin-bottom: 10px; }
+    
+    .folder-create { display: flex; gap: 5px; }
+    .folder-create input { flex: 1; padding: 6px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-color); color: var(--text-color); }
+    .folder-create button { padding: 6px 10px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; }
+
+    .folder-list { list-style: none; }
+    .folder-item { margin-bottom: 10px; border: 1px solid var(--border-color); border-radius: 4px; padding: 8px; background: var(--bg-color); }
+    .folder-header { font-weight: bold; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+    .bookmark-item { font-size: 0.85rem; margin-left: 10px; margin-top: 4px; padding: 3px 0; border-bottom: 1px dashed var(--border-color); display: flex; justify-content: space-between; }
+    .bookmark-item a { color: var(--accent-color); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px; }
+
+    /* コンテンツエリア */
+    .content-area { flex: 1; display: flex; flex-direction: column; position: relative; }
+
+    .study-tools { background: var(--sidebar-bg); padding: 8px 15px; border-bottom: 1px solid var(--border-color); display: flex; gap: 10px; align-items: center; }
+    .study-tools button { padding: 5px 10px; background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
+
+    .view-container { display: flex; flex: 1; height: 100%; position: relative; }
+    
+    /* Webページ表示エリア */
+    .iframe-wrapper { flex: 2; height: 100%; position: relative; background: #fff; }
+    .tab-iframe { width: 100%; height: 100%; border: none; display: none; }
+    .tab-iframe.active { display: block; }
+
+    /* メモエリア */
+    .memo-wrapper { flex: 1; border-left: 1px solid var(--border-color); background: var(--sidebar-bg); display: flex; flex-direction: column; }
+    .memo-header { padding: 10px; background: var(--bg-color); border-bottom: 1px solid var(--border-color); font-weight: bold; font-size: 0.9rem; }
+    .memo-editor { flex: 1; padding: 10px; border: none; outline: none; font-size: 0.9rem; resize: none; line-height: 1.5; color: var(--text-color); background: var(--sidebar-bg); }
+
+    /* ブロック画面 Overlay */
+    .blocked-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #1a252f; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 999; display: none; }
+
+    /* モーダル */
+    .modal-overlay { position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.6); display:none; justify-content:center; align-items:center; z-index:2000; }
+    .modal-content { background: var(--sidebar-bg); color: var(--text-color); width: 80%; max-width: 700px; height: 85vh; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; }
+    .modal-header { padding: 15px; background: var(--header-bg); color: white; display: flex; justify-content: space-between; align-items: center; }
+    .modal-body { padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 20px; }
+    .setting-section { border-bottom: 1px solid var(--border-color); padding-bottom: 15px; }
+    .setting-section h4 { margin-bottom: 10px; color: var(--accent-color); }
+    .setting-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.9rem; }
+    .setting-item input[type="text"], .setting-item select { padding: 5px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-color); color: var(--text-color); }
+
+    .highlight { background-color: #ffeb3b; color: #000; }
+  </style>
+</head>
+<body class="theme-light">
+
+  <!-- ヘッダー -->
+  <header>
+    <div class="brand" id="appTitle">StudyBrowser</div>
+    <div class="nav-bar">
+      <input type="text" id="urlInput" placeholder="URLまたは検索キーワードを入力...">
+      <button onclick="handleNavInput()" id="btnGo">移動/検索</button>
+      <button onclick="startVoiceInput()" id="btnVoice">🎤 音声入力</button>
+    </div>
+    <div class="study-mode-toggle">
+      <span id="labelStudyMode">学習モード</span>
+      <label class="switch">
+        <input type="checkbox" id="studyModeToggle" checked onchange="toggleStudyMode()">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <button class="menu-btn" onclick="openSettings()" id="btnMenu">⚙ メニュー/設定</button>
+  </header>
+
+  <!-- タブバー -->
+  <div class="tabs-bar" id="tabsBar">
+    <button class="add-tab-btn" onclick="addNewTab()">+</button>
+  </div>
+
+  <!-- メインエリア -->
+  <div class="main-container">
+    
+    <!-- サイドバー -->
+    <div class="sidebar">
+      <h3 id="lblFolderTitle">📁 テーマ別フォルダ保存</h3>
+      <div class="folder-create">
+        <input type="text" id="newFolderInput" placeholder="新しいフォルダ名">
+        <button onclick="createFolder()" id="btnFolderCreate">作成</button>
+      </div>
+      <ul class="folder-list" id="folderList"></ul>
+
+      <button style="margin-top:auto; padding: 8px; background: var(--accent-color); color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="saveCurrentPageToFolder()" id="btnSavePage">
+        ⭐ 現在のページを保存
+      </button>
+    </div>
+
+    <!-- コンテンツエリア -->
+    <div class="content-area">
+      <div class="study-tools" id="studyToolsBar">
+        <button onclick="applyHighlight()" id="btnHighlight">🖍 テキストに黄色マーカー</button>
+        <button onclick="toggleFullscreen()" id="btnFullscreen">📺 全画面切替</button>
+        <span style="font-size:0.8rem; opacity:0.8;" id="lblHighlightTip">※ハイライト機能はメモ内で機能します</span>
+      </div>
+
+      <div class="view-container">
+        <!-- iframe Wrapper -->
+        <div class="iframe-wrapper" id="iframeWrapper">
+          <div class="blocked-overlay" id="blockOverlay">
+            <h1>🚫 集中タイム！</h1>
+            <p id="lblBlockedMsg">学習モードがONのため、このWebサイトはブロックされています。</p>
+          </div>
+        </div>
+
+        <!-- メモ欄 -->
+        <div class="memo-wrapper" id="memoSection">
+          <div class="memo-header" id="lblMemoHeader">📝 このページの学習メモ</div>
+          <div id="memoEditor" class="memo-editor" contenteditable="true" placeholder="ここにメモを入力してください..."></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 設定モーダル -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalTitle">⚙ 設定 & ブラウザ管理</h3>
+        <button style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;" onclick="closeSettings()">✕</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- テーマ設定 (新機能) -->
+        <div class="setting-section">
+          <h4>🎨 カラーテーマ設定</h4>
+          <div class="setting-item">
+            <span>外観テーマ:</span>
+            <select id="themeSelect" onchange="changeTheme(this.value)">
+              <option value="theme-light">ライト (標準)</option>
+              <option value="theme-dark">ダーク (夜間モード)</option>
+              <option value="theme-blue">オーシャンブルー</option>
+              <option value="theme-green">フォレストグリーン</option>
+              <option value="theme-purple">エレガントパープル</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 言語設定 -->
+        <div class="setting-section">
+          <h4 id="headingLang">利用言語 (Language)</h4>
+          <div class="setting-item">
+            <span>Language:</span>
+            <select id="langSelect" onchange="changeLanguage(this.value)">
+              <option value="ja">日本語</option>
+              <option value="en">English</option>
+              <option value="zh">中文</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- リンク挙動設定 -->
+        <div class="setting-section">
+          <h4 id="headingLinkBehavior">リンク・検索結果の開き方</h4>
+          <div class="setting-item">
+            <span>リンククリック時にアプリ内新タブで開く試み:</span>
+            <input type="checkbox" id="chkOpenLinksInNewTab" checked onchange="saveSettings()">
+          </div>
+          <div class="setting-item">
+            <span>検索実行時に常に新タブで開く:</span>
+            <input type="checkbox" id="chkSearchInNewTab" onchange="saveSettings()">
+          </div>
+        </div>
+
+        <!-- 機能 ON/OFF -->
+        <div class="setting-section">
+          <h4 id="headingFeatures">機能のON/OFF (集中用)</h4>
+          <div class="setting-item">
+            <span>メモ機能の表示:</span>
+            <input type="checkbox" id="chkShowMemo" checked onchange="updateFeatureToggles()">
+          </div>
+          <div class="setting-item">
+            <span>学習ツールの表示:</span>
+            <input type="checkbox" id="chkShowTools" checked onchange="updateFeatureToggles()">
+          </div>
+        </div>
+
+        <!-- 検索 & デフォルト設定 -->
+        <div class="setting-section">
+          <h4 id="headingSearchTab">検索 & デフォルトタブ設定</h4>
+          <div class="setting-item">
+            <span>デフォルト検索エンジン:</span>
+            <select id="searchEngineSelect" onchange="saveSettings()">
+              <option value="https://www.google.com/search?q=">Google</option>
+              <option value="https://www.bing.com/search?q=">Bing</option>
+              <option value="https://search.yahoo.co.jp/search?p=">Yahoo! JAPAN</option>
+              <option value="https://duckduckgo.com/?q=">DuckDuckGo</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <span>新規タブのデフォルトURL:</span>
+            <input type="text" id="defaultTabUrl" value="https://ja.wikipedia.org" onchange="saveSettings()">
+          </div>
+        </div>
+
+        <!-- ブロックサイト編集 -->
+        <div class="setting-section">
+          <h4 id="headingBlockList">ブロックWebサイトの編集</h4>
+          <div style="display:flex; gap:5px; margin-bottom:10px;">
+            <input type="text" id="newBlockDomain" placeholder="例: youtube.com" style="flex:1; padding:5px;">
+            <button onclick="addBlockDomain()">追加</button>
+          </div>
+          <div id="blockListContainer" style="max-height:80px; overflow-y:auto; border:1px solid var(--border-color); padding:5px;"></div>
+        </div>
+
+        <!-- JSONによる機能拡張 / データ転送 -->
+        <div class="setting-section">
+          <h4 id="headingExtension">データ転送 & JSON機能追加</h4>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button onclick="exportUserData()">📤 設定・履歴をエクスポート (JSON)</button>
+            <button onclick="document.getElementById('importFileInput').click()">📥 JSONファイルをインポート</button>
+            <input type="file" id="importFileInput" style="display:none;" accept=".json" onchange="importUserData(event)">
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const i18n = {
+      ja: { appTitle: "StudyBrowser Pro", btnGo: "移動/検索", btnVoice: "🎤 音声入力", labelStudyMode: "学習モード", btnMenu: "⚙ メニュー/設定", lblFolderTitle: "📁 テーマ別フォルダ保存", btnFolderCreate: "作成", btnSavePage: "⭐ 現在のページを保存", btnHighlight: "🖍 テキストに黄色マーカー", btnFullscreen: "📺 全画面切替", lblHighlightTip: "※ハイライト機能はメモ内で機能します", lblBlockedMsg: "学習モードがONのため、このWebサイトはブロックされています。", lblMemoHeader: "📝 このページの学習メモ", modalTitle: "⚙ 設定 & ブラウザ管理", headingLang: "利用言語 (Language)", headingFeatures: "機能のON/OFF (集中用)", headingSearchTab: "検索 & デフォルトタブ設定", headingBlockList: "ブロックWebサイトの編集", headingExtension: "データ転送 & JSON機能追加", headingLinkBehavior: "リンク・検索結果の開き方" },
+      en: { appTitle: "StudyBrowser Pro", btnGo: "Go/Search", btnVoice: "🎤 Voice", labelStudyMode: "Study Mode", btnMenu: "⚙ Settings", lblFolderTitle: "📁 Folders", btnFolderCreate: "Create", btnSavePage: "⭐ Save Page", btnHighlight: "🖍 Highlight", btnFullscreen: "📺 Fullscreen", lblHighlightTip: "*Highlight works inside memo", lblBlockedMsg: "Blocked by Study Mode.", lblMemoHeader: "📝 Page Notes", modalTitle: "⚙ Settings", headingLang: "Language", headingFeatures: "Toggle Features", headingSearchTab: "Search & Default Tab", headingBlockList: "Edit Blocklist", headingExtension: "Data & Extension", headingLinkBehavior: "Link Behavior" },
+      zh: { appTitle: "学习智能浏览器 Pro", btnGo: "转到/搜索", btnVoice: "🎤 语音", labelStudyMode: "学习模式", btnMenu: "⚙ 设置", lblFolderTitle: "📁 文件夹", btnFolderCreate: "创建", btnSavePage: "⭐ 保存页面", btnHighlight: "🖍 高亮", btnFullscreen: "📺 全屏", lblHighlightTip: "※高亮功能在笔记区有效", lblBlockedMsg: "已被拦截。", lblMemoHeader: "学习笔记", modalTitle: "⚙ 设置", headingLang: "语言", headingFeatures: "功能开关", headingSearchTab: "搜索设置", headingBlockList: "拦截列表", headingExtension: "数据扩展", headingLinkBehavior: "链接打开方式" }
+    };
+
+    let tabs = [];
+    let activeTabId = null;
+    let folders = JSON.parse(localStorage.getItem('sb_folders')) || { "基本フォルダ": [] };
+    let historyList = JSON.parse(localStorage.getItem('sb_history')) || [];
+    
+    let settings = JSON.parse(localStorage.getItem('sb_settings')) || {
+      theme: 'theme-light',
+      language: 'ja',
+      showMemo: true,
+      showTools: true,
+      searchEngine: 'https://www.google.com/search?q=',
+      defaultTabUrl: 'https://ja.wikipedia.org',
+      searchInNewTab: false,
+      openLinksInNewTab: true,
+      blockedDomains: ['youtube.com', 'youtu.be', 'tiktok.com', 'twitter.com', 'x.com', 'instagram.com']
+    };
+
+    window.onload = () => {
+      applySettingsToUI();
+      addNewTab(settings.defaultTabUrl);
+      renderFolders();
+    };
+
+    // テーマ変更
+    function changeTheme(themeName) {
+      document.body.className = themeName;
+      settings.theme = themeName;
+      saveSettings();
+    }
+
+    // タブ追加
+    function addNewTab(url = settings.defaultTabUrl) {
+      const tabId = 'tab_' + Date.now();
+      const tab = { id: tabId, title: '新しいタブ', url: url, memo: '' };
+      tabs.push(tab);
+
+      const wrapper = document.getElementById('iframeWrapper');
+      const iframe = document.createElement('iframe');
+      iframe.id = 'iframe_' + tabId;
+      iframe.className = 'tab-iframe';
+      iframe.src = url;
+
+      iframe.onload = () => {
+        try {
+          const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+          if (iframeDoc && settings.openLinksInNewTab) {
+            iframeDoc.addEventListener('click', (e) => {
+              const targetLink = e.target.closest('a');
+              if (targetLink && targetLink.href && (targetLink.target === '_blank' || targetLink.target === '_top')) {
+                e.preventDefault();
+                addNewTab(targetLink.href);
+              }
+            }, true);
+          }
+        } catch (err) {
+          // CORS制限により取得不可の外部サイトはスルー
+        }
+      };
+
+      wrapper.appendChild(iframe);
+      switchTab(tabId);
+      return tabId;
+    }
+
+    function switchTab(tabId) {
+      if (activeTabId) {
+        const curTab = tabs.find(t => t.id === activeTabId);
+        if (curTab) curTab.memo = document.getElementById('memoEditor').innerHTML;
+      }
+
+      activeTabId = tabId;
+      const tab = tabs.find(t => t.id === tabId);
+
+      document.getElementById('urlInput').value = tab.url === 'about:blank' ? '' : tab.url;
+      document.getElementById('memoEditor').innerHTML = tab.memo;
+
+      document.querySelectorAll('.tab-iframe').forEach(el => el.classList.remove('active'));
+      const activeIframe = document.getElementById('iframe_' + tabId);
+      if (activeIframe) activeIframe.classList.add('active');
+
+      checkBlockStatus(tab.url);
+      renderTabs();
+    }
+
+    function closeTab(tabId, event) {
+      if(event) event.stopPropagation();
+      if (tabs.length === 1) return;
+
+      tabs = tabs.filter(t => t.id !== tabId);
+      const iframe = document.getElementById('iframe_' + tabId);
+      if (iframe) iframe.remove();
+
+      if (activeTabId === tabId) {
+        switchTab(tabs[tabs.length - 1].id);
+      } else {
+        renderTabs();
+      }
+    }
+
+    function renderTabs() {
+      const tabsBar = document.getElementById('tabsBar');
+      tabsBar.querySelectorAll('.tab').forEach(el => el.remove());
+      const addBtn = tabsBar.querySelector('.add-tab-btn');
+
+      tabs.forEach(tab => {
+        const tabEl = document.createElement('div');
+        tabEl.className = `tab ${tab.id === activeTabId ? 'active' : ''}`;
+        tabEl.onclick = () => switchTab(tab.id);
+        tabEl.innerHTML = `<span>${tab.title}</span><span class="close-tab" onclick="closeTab('${tab.id}', event)">✕</span>`;
+        tabsBar.insertBefore(tabEl, addBtn);
+      });
+    }
+
+    function handleNavInput() {
+      const input = document.getElementById('urlInput').value.trim();
+      if (!input) return;
+
+      let targetUrl = input;
+      const isSearch = !input.includes('.') || input.includes(' ');
+      
+      if (isSearch) {
+        targetUrl = settings.searchEngine + encodeURIComponent(input);
+      } else if (!input.startsWith('http://') && !input.startsWith('https://')) {
+        targetUrl = 'https://' + input;
+      }
+
+      if (isSearch && settings.searchInNewTab && activeTabId) {
+        const currentTab = tabs.find(t => t.id === activeTabId);
+        if (currentTab && currentTab.url !== 'about:blank' && currentTab.url !== settings.defaultTabUrl) {
+          addNewTab(targetUrl);
+          updateTabInfo(activeTabId, targetUrl, `検索: ${input}`);
+          return;
+        }
+      }
+
+      updateTabInfo(activeTabId, targetUrl, isSearch ? `検索: ${input}` : targetUrl);
+    }
+
+    function updateTabInfo(tabId, targetUrl, titleText) {
+      const currentTab = tabs.find(t => t.id === tabId);
+      if (currentTab) {
+        currentTab.url = targetUrl;
+        currentTab.title = titleText.replace('https://', '').replace('http://', '').split('/')[0];
+        const iframe = document.getElementById('iframe_' + tabId);
+        if (iframe) iframe.src = targetUrl;
+
+        checkBlockStatus(targetUrl);
+        renderTabs();
+      }
+    }
+
+    function checkBlockStatus(url) {
+      const isStudy = document.getElementById('studyModeToggle').checked;
+      const isBlocked = settings.blockedDomains.some(domain => url.toLowerCase().includes(domain));
+      const overlay = document.getElementById('blockOverlay');
+      const activeIframe = document.getElementById('iframe_' + activeTabId);
+
+      if (isStudy && isBlocked) {
+        overlay.style.display = 'flex';
+        if (activeIframe) activeIframe.style.visibility = 'hidden';
+      } else {
+        overlay.style.display = 'none';
+        if (activeIframe) activeIframe.style.visibility = 'visible';
+      }
+    }
+
+    function toggleStudyMode() {
+      const currentTab = tabs.find(t => t.id === activeTabId);
+      if (currentTab) checkBlockStatus(currentTab.url);
+    }
+
+    function startVoiceInput() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) return alert('音声入力に対応していません。');
+      const recognition = new SpeechRecognition();
+      recognition.lang = settings.language === 'en' ? 'en-US' : (settings.language === 'zh' ? 'zh-CN' : 'ja-JP');
+      recognition.onstart = () => { document.getElementById('btnVoice').innerText = '🎙 話してください...'; };
+      recognition.onresult = (e) => {
+        document.getElementById('urlInput').value = e.results[0][0].transcript;
+        document.getElementById('btnVoice').innerText = i18n[settings.language].btnVoice;
+        handleNavInput();
+      };
+      recognition.onerror = () => { document.getElementById('btnVoice').innerText = i18n[settings.language].btnVoice; };
+      recognition.start();
+    }
+
+    function createFolder() {
+      const input = document.getElementById('newFolderInput');
+      const name = input.value.trim();
+      if (name && !folders[name]) {
+        folders[name] = [];
+        input.value = '';
+        saveFolders();
+        renderFolders();
+      }
+    }
+
+    function saveCurrentPageToFolder() {
+      const currentTab = tabs.find(t => t.id === activeTabId);
+      if (!currentTab || currentTab.url === 'about:blank') return;
+      const folderNames = Object.keys(folders);
+      if (folderNames.length === 0) return;
+      const chosen = prompt(`保存先フォルダを指定:\n(${folderNames.join(', ')})`, folderNames[0]);
+      if (chosen && folders[chosen]) {
+        folders[chosen].push({ title: currentTab.title, url: currentTab.url });
+        saveFolders();
+        renderFolders();
+      }
+    }
+
+    function renderFolders() {
+      const list = document.getElementById('folderList');
+      list.innerHTML = '';
+      for (const [folderName, items] of Object.entries(folders)) {
+        const folderLi = document.createElement('li');
+        folderLi.className = 'folder-item';
+        let itemsHtml = items.map(item => `<div class="bookmark-item"><a href="#" onclick="openBookmark('${item.url}')">${item.title}</a></div>`).join('');
+        folderLi.innerHTML = `<div class="folder-header"><span>📁 ${folderName}</span></div><div>${itemsHtml || '<span style="font-size:0.75rem; opacity:0.6;">(空)</span>'}</div>`;
+        list.appendChild(folderLi);
+      }
+    }
+
+    function openBookmark(url) {
+      document.getElementById('urlInput').value = url;
+      handleNavInput();
+    }
+
+    function saveFolders() { localStorage.setItem('sb_folders', JSON.stringify(folders)); }
+
+    function applyHighlight() {
+      const selection = window.getSelection();
+      if (!selection.rangeCount || selection.isCollapsed) return;
+      const span = document.createElement('span');
+      span.className = 'highlight';
+      try { selection.getRangeAt(0).surroundContents(span); } catch (e) {}
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else if (document.exitFullscreen) document.exitFullscreen();
+    }
+
+    function openSettings() { renderBlockList(); document.getElementById('settingsModal').style.display = 'flex'; }
+    function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
+
+    function changeLanguage(lang) {
+      settings.language = lang;
+      saveSettings();
+      applyLanguageUI();
+    }
+
+    function applyLanguageUI() {
+      const dict = i18n[settings.language] || i18n.ja;
+      for (const [key, text] of Object.entries(dict)) {
+        const el = document.getElementById(key);
+        if (el) el.innerText = text;
+      }
+    }
+
+    function updateFeatureToggles() {
+      settings.showMemo = document.getElementById('chkShowMemo').checked;
+      settings.showTools = document.getElementById('chkShowTools').checked;
+      document.getElementById('memoSection').style.display = settings.showMemo ? 'flex' : 'none';
+      document.getElementById('studyToolsBar').style.display = settings.showTools ? 'flex' : 'none';
+      saveSettings();
+    }
+
+    function renderBlockList() {
+      const container = document.getElementById('blockListContainer');
+      container.innerHTML = '';
+      settings.blockedDomains.forEach((domain, idx) => {
+        const div = document.createElement('div');
+        div.style.cssText = 'display:flex; justify-content:space-between; padding:3px 0; font-size:0.85rem;';
+        div.innerHTML = `<span>${domain}</span><button style="color:red; border:none; background:none; cursor:pointer;" onclick="removeBlockDomain(${idx})">削除</button>`;
+        container.appendChild(div);
+      });
+    }
+
+    function addBlockDomain() {
+      const input = document.getElementById('newBlockDomain');
+      const domain = input.value.trim().toLowerCase();
+      if (domain && !settings.blockedDomains.includes(domain)) {
+        settings.blockedDomains.push(domain);
+        input.value = '';
+        saveSettings();
+        renderBlockList();
+      }
+    }
+
+    function removeBlockDomain(idx) {
+      settings.blockedDomains.splice(idx, 1);
+      saveSettings();
+      renderBlockList();
+    }
+
+    function exportUserData() {
+      const blob = new Blob([JSON.stringify({ settings, folders, historyList }, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `study_browser_data.json`;
+      a.click();
+    }
+
+    function importUserData(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const imported = JSON.parse(evt.target.result);
+          if (imported.settings) settings = imported.settings;
+          if (imported.folders) folders = imported.folders;
+          saveSettings();
+          saveFolders();
+          applySettingsToUI();
+          renderFolders();
+          alert('インポート完了しました！');
+        } catch (err) { alert('読み込みエラー'); }
+      };
+      reader.readAsText(file);
+    }
+
+    function saveSettings() {
+      settings.searchEngine = document.getElementById('searchEngineSelect').value;
+      settings.defaultTabUrl = document.getElementById('defaultTabUrl').value;
+      settings.searchInNewTab = document.getElementById('chkSearchInNewTab').checked;
+      settings.openLinksInNewTab = document.getElementById('chkOpenLinksInNewTab').checked;
+      localStorage.setItem('sb_settings', JSON.stringify(settings));
+    }
+
+    function applySettingsToUI() {
+      const currentTheme = settings.theme || 'theme-light';
+      document.body.className = currentTheme;
+      document.getElementById('themeSelect').value = currentTheme;
+
+      document.getElementById('langSelect').value = settings.language;
+      document.getElementById('chkShowMemo').checked = settings.showMemo;
+      document.getElementById('chkShowTools').checked = settings.showTools;
+      document.getElementById('searchEngineSelect').value = settings.searchEngine;
+      document.getElementById('defaultTabUrl').value = settings.defaultTabUrl;
+      document.getElementById('chkSearchInNewTab').checked = settings.searchInNewTab || false;
+      document.getElementById('chkOpenLinksInNewTab').checked = settings.openLinksInNewTab !== false;
+      
+      updateFeatureToggles();
+      applyLanguageUI();
+    }
+  </script>
+</body>
+</html>
